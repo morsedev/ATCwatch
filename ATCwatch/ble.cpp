@@ -1,4 +1,3 @@
-
 #include "ble.h"
 
 #include "pinout.h"
@@ -20,9 +19,9 @@ BLECharacteristic   RXchar        = BLECharacteristic("0001", BLEWriteWithoutRes
 bool vars_ble_connected = false;
 
 void init_ble() {
-  blePeripheral.setLocalName("Timepeace");
+  blePeripheral.setLocalName("ATCwatch");
   blePeripheral.setAdvertisingInterval(500);
-  blePeripheral.setDeviceName("Timepeace");
+  blePeripheral.setDeviceName("ATCwatch");
   blePeripheral.setAdvertisedServiceUuid(main_service.uuid());
   blePeripheral.addAttribute(main_service);
   blePeripheral.addAttribute(TXchar);
@@ -39,12 +38,12 @@ void ble_feed() {
 }
 
 void ble_ConnectHandler(BLECentral& central) {
-  sleep_up();
+  sleep_up(WAKEUP_BLECONNECTED);
   set_vars_ble_connected(true);
 }
 
 void ble_DisconnectHandler(BLECentral& central) {
-  sleep_up();
+  sleep_up(WAKEUP_BLEDISCONNECTED);
   set_vars_ble_connected(false);
 }
 

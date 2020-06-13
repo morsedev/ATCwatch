@@ -6,16 +6,20 @@
 #include "backlight.h"
 #include "heartrate.h"
 #include "touch.h"
+#include "accl.h"
 #include "menu.h"
 #include "inputoutput.h"
 #include <nrf_nvic.h>//interrupt controller stuff
 #include <nrf_sdm.h>
 #include <nrf_soc.h>
+#include <lvgl.h>
 
 bool sleep_enable = false;
 bool sleep_sleeping = false;
+int wakeup_reason = 0;
 long lastaction = 0;
 volatile bool i2cReading = false;
+long last_sleep_check;
 
 void init_sleep() {
   //sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
@@ -30,8 +34,9 @@ bool get_sleep() {
   return sleep_sleeping;
 }
 
-bool sleep_up() {
+bool sleep_up(int reason) {
   if (sleep_sleeping) {
+    wakeup_reason = reason;
     sleep_sleeping = false;
     set_sleep_time();
     display_enable(true);
@@ -45,11 +50,17 @@ void sleep_down() {
   if (!sleep_sleeping) {
     sleep_sleeping = true;
     disable_hardware();
+    set_was_touched(false);
   }
+}
+
+int get_wakeup_reason() {
+  return wakeup_reason;
 }
 
 void disable_hardware() {
   set_backlight(0);
+  inc_tick();
   display_home();
   display_screen(true);
   end_hrs3300();
@@ -72,8 +83,17 @@ void set_sleep_time() {
 }
 
 void check_sleep_times() {
-  if (millis() - lastaction > get_sleep_time_menu())
-    sleep_down();
+  if (millis() - last_sleep_check > 300) {
+    last_sleep_check = millis();
+
+    bool temp_sleep = false;
+    if (millis() - lastaction > get_sleep_time_menu())
+      temp_sleep = true;
+    if (get_wakeup_reason() == WAKEUP_ACCL && !get_was_touched() && !get_is_looked_at())
+      temp_sleep = true;
+    if (temp_sleep)
+      sleep_down();
+  }
 }
 
 volatile bool shot;
@@ -86,6 +106,10 @@ bool get_timed_int() {
 
 void set_i2cReading(bool state) {
   i2cReading = state;
+}
+
+bool get_i2cReading() {
+  return i2cReading;
 }
 
 #define LF_FREQUENCY 32768UL
@@ -118,6 +142,7 @@ void RTC2_IRQHandler(void)
     dummy = NRF_RTC2->EVENTS_COMPARE[0];
     dummy;
     shot = true;
+    if (!sleep_sleeping)inc_tick();
     check_inputoutput_times();
     if (!i2cReading)get_heartrate_ms();
   }

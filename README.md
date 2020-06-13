@@ -1,5 +1,5 @@
 # ATCwatch  -WatcH
-Custom Aruino C++ firmware for the P8 and PineTime plus many more DaFit Smartwatches
+Custom Arduino C++ firmware for the P8 and PineTime plus many more DaFit Smartwatches
 
 About 150-200uA standby current consumtion.Currently 92 Hours Runtime with heavy notification and usage!.
 Basic menu system and notification working.
@@ -29,4 +29,8 @@ https://play.google.com/store/apps/details?id=com.atcnetz.de.notification&hl=gsw
 You can use and edit the code as long as you mention me (Aaron Christophel and https://ATCnetz.de) in the source and somewhere in the menu of the working firmware, even when using small peaces of the code. :)
 If you want to use the code or parts of it commercial please write an email to: info@atcnetz.de
 
+##Credits:
+Many Thanks to Daniel Thompson(https://github.com/daniel-thompson/wasp-os) to giving the Hint with the BMA423 Library
+This way interrupts are finally possible with it.
 This code uses the BMA421 Library wich is made by Bosch and this is under copyright by Bosch Sensortech GmbH
+https://github.com/BoschSensortec/BMA423-Sensor-API

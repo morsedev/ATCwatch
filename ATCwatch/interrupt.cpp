@@ -6,6 +6,7 @@
 #include "accl.h"
 #include "touch.h"
 #include "inputoutput.h"
+#include "inputoutput.h"
 #include "battery.h"
 
 long last_button_press = 0;
@@ -150,6 +151,7 @@ void set_button_interrupt() {
 }
 
 void set_touch_interrupt() {
+  if (!get_i2cReading())get_read_touch();
   touch_int = true;
 }
 
@@ -158,27 +160,27 @@ void set_accl_interrupt() {
 }
 
 void interrupt_charged() {
-  sleep_up();
+  sleep_up(WAKEUP_CHARGED);
   set_sleep_time();
   if (get_charged())
-    set_motor_ms();
-  else
     set_led_ms(1000);
+  else
+    set_motor_ms();
 }
 
 void interrupt_charge() {
-  sleep_up();
+  sleep_up(WAKEUP_CHARGE);
   set_sleep_time();
   if (get_charge())
-    set_motor_ms();
-  else
     set_led_ms(1000);
+  else
+    set_motor_ms();
 }
 
 void interrupt_button() {
   if (get_button() && (millis() - last_button_press > 200)) {
     last_button_press = millis();
-    if (!sleep_up()) {
+    if (!sleep_up(WAKEUP_BUTTON)) {
       display_home();
     }
     set_motor_ms(40);
@@ -187,8 +189,9 @@ void interrupt_button() {
 }
 
 void interrupt_touch() {
-  if (!sleep_up()) {
-    check_menu();
+  set_was_touched(true);
+  if (!sleep_up(WAKEUP_TOUCH)) {
+    set_new_touch_interrupt();
   } else {
     display_home();
   }
@@ -196,12 +199,18 @@ void interrupt_touch() {
 }
 
 void interrupt_accl() {
-  sleep_up();
+  sleep_up(WAKEUP_ACCL_INT);
   get_accl_int();
   set_sleep_time();
 }
 
 void disable_interrupt() {
+  NRF_GPIO->PIN_CNF[PUSH_BUTTON_IN] &= ~GPIO_PIN_CNF_SENSE_Msk;
+  NRF_GPIO->PIN_CNF[PUSH_BUTTON_IN] |= (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
+
+  NRF_GPIO->PIN_CNF[POWER_INDICATION] &= ~GPIO_PIN_CNF_SENSE_Msk;
+  NRF_GPIO->PIN_CNF[POWER_INDICATION] |= (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
+
   NRF_GPIO->PIN_CNF[CHARGE_INDICATION] &= ~GPIO_PIN_CNF_SENSE_Msk;
   NRF_GPIO->PIN_CNF[CHARGE_INDICATION] |= (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos);
 
